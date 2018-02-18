@@ -1,6 +1,6 @@
 package org.jamesshaw.dummyworkload;
 
-import org.jamesshaw.threadprofiler.DataElement;
+import org.jamesshaw.threadprofiler.ThreadProfilerNode;
 import org.jamesshaw.threadprofiler.ThreadProfiler;
 
 import java.util.concurrent.ExecutorService;
@@ -19,7 +19,7 @@ public class Main {
 
     public static void main(String[] args) {
 
-        DataElement mainElement = ThreadProfiler.node("main", "Main method started");
+        ThreadProfilerNode mainElement = ThreadProfiler.node("main", "Main method started");
         int numberOfJobsToSimulate = 1;
         int concurrentThreads = 10;
 
@@ -32,30 +32,31 @@ public class Main {
         });
 
         ThreadProfiler.snapshot("threadpool", "Setting up thread pool");
+        ThreadProfiler.getInstance().joinFrom("main");
 
         for(int i = 0; i < numberOfJobsToSimulate; i++) {
 
             executorService.execute(() -> {
 
-                DataElement threadElement = ThreadProfiler.node("thread", "Started");
+                ThreadProfiler.getInstance().joinTo("main");
+
+                ThreadProfilerNode threadElement = ThreadProfiler.node("thread", "Started");
 
                 // Simulate some smaller CPU bound operation [parsing inputs, permissioning etc]
                 simulateCPUBound(50, 100);
-                ThreadProfiler.snapshot("validation", "Initial validation complete");
+                ThreadProfiler.snapshot("validation", "CPU bound validation");
 
                 // Simulate some IO bound operation [loading data that we'll be working with]
                 simulateIOBound(150, 250);
-                ThreadProfiler.snapshot("initial select", "select * from foo where val='234'");
+                ThreadProfiler.snapshot("initial select", "DB bound select");
 
                 // Simulate a larger CPU bound operation [processing the data we've loaded]
                 simulateCPUBound(150, 250);
-                ThreadProfiler.snapshot("main processing", "main processing complete");
+                ThreadProfiler.snapshot("main processing", "CPU bound processing");
 
                 // Simulate a final IO bound operation [committing some state based on the processing]
                 simulateIOBound(20, 30);
-                ThreadProfiler.snapshot("final update", "insert into results...");
-
-                threadElement.dump();
+                ThreadProfiler.snapshot("final update", "DB bound insert");
 
 
             });
@@ -77,7 +78,8 @@ public class Main {
         }
 
 
-        mainElement.dump();
+        System.out.println(mainElement.format());
+
         System.out.println(blackhole);
 
     }

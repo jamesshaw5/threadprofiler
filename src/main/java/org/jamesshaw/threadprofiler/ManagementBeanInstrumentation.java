@@ -3,15 +3,16 @@ package org.jamesshaw.threadprofiler;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadMXBean;
 
-public class Instrumentation {
+public class ManagementBeanInstrumentation implements InstrumentationProvider{
 
     private static ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
 
-    public static long getCPUTime() {
-        return threadMXBean.getCurrentThreadCpuTime();
+    public long getCycleTime() {
+        long value = threadMXBean.getCurrentThreadCpuTime();
+        return value;
     }
 
-    public static long getWallTime() {
+    public long getWallTime() {
         return System.nanoTime();
     }
 
